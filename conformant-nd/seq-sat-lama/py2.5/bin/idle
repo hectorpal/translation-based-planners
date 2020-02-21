@@ -1,0 +1,5 @@
+#!/home/aalbore/Contingency/t0/lama/seq-sat-lama/py2.5/bin/python
+
+from idlelib.PyShell import main
+if __name__ == '__main__':
+    main()
