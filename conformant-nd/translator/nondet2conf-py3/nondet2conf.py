@@ -397,7 +397,7 @@ def print_ordered(n, e):
             print()
 
 
-def nondet2conf(domain_nf, problem_nf, prefix, method='-a', reset=True, flat=False):
+def nondet2conf(domain_nf, problem_nf, prefix, method='-a', reset=True, all_reset=False, flat=False):
     ###############################
     # Loading Problem PDDL
     ###############################
@@ -433,13 +433,14 @@ def nondet2conf(domain_nf, problem_nf, prefix, method='-a', reset=True, flat=Fal
 
     npredicates = get_new_problem(action_start, dactions, dconstants, ddomain, domain_pddl, dpredicates, drequirements,
                                   dtypes, l, new_precond, pdomain, pgoals, pinit, pname, pobjects, prefix, problem_nf,
-                                  problem_pddl, reset, flat)
+                                  problem_pddl, reset, all_reset, flat)
 
     return len(npredicates) != 0
 
 
 def get_new_problem(action_start, dactions, dconstants, ddomain, domain_pddl, dpredicates, drequirements, dtypes, l,
-                    new_precond, pdomain, pgoals, pinit, pname, pobjects, prefix, problem_nf, problem_pddl, reset, flat):
+                    new_precond, pdomain, pgoals, pinit, pname, pobjects, prefix, problem_nf, problem_pddl,
+                    reset, all_reset, flat):
     ###############################
     # Loading constants and objects for instantiation
     ###############################
@@ -472,7 +473,7 @@ def get_new_problem(action_start, dactions, dconstants, ddomain, domain_pddl, dp
     # Process each action
     for act in dactions:
         get_action(act, action_start, l, nactions, new_precond, ninit, npredicates, obj2type, pinit, predicate_prefix,
-                   problem_nf, reset, flat)
+                   problem_nf, reset, all_reset, flat)
     if False:
         print('====================')
         print('npredicates')
@@ -526,7 +527,7 @@ def flat_init(ninit, flat):
 
 
 def get_action(act, action_start, l, nactions, new_precond, ninit, npredicates, obj2type, pinit, predicate_prefix,
-               problem_nf, reset, flat):
+               problem_nf, reset, all_reset, flat):
     name = []
     parameters = []
     precond = []
@@ -606,7 +607,7 @@ def get_action(act, action_start, l, nactions, new_precond, ninit, npredicates, 
     if name != action_start:
         precond = add_precond(precond, new_precond)
     # Allow action to be executed once
-    if has_oneof and reset:
+    if (has_oneof and reset) or all_reset:
         pred_once = [new_pred_prefix + new_pred_postfix + '-once']
         if VERBOSE_ADDING:
             print(f'action: {new_pred_postfix}; precondition: {pred_once[0]}')
@@ -839,8 +840,12 @@ B iff (and c d)
                         help='problem pddl')
     parser.add_argument('--nor', action='store_true',
                         help='Disable --reset actions generation')
+    parser.add_argument('--all-reset', action='store_true',
+                        help='Add --reset to all actions, even if they are deterministic')
     parser.add_argument('--flat', action='store_true',
-                        help='Instead of new (one A B), adds both A and B to init. Likely inconsistent but ')
+                        help='Instead of new (one A B), adds both A and B to init. '
+                             'This might be useful for producing weak plans that choose a non-det effect.'
+                             'It might be well-defined for problems not using negative preconditions/conditions')
     parser.add_argument('--init', action='store_true',
                         help='in case of complex one, use init instead of create an action')
     args = parser.parse_args()
@@ -867,7 +872,7 @@ if __name__ == "__main__":
     prefix = args.prefix
 
     # Just one copy in principle
-    if nondet2conf(domain_nf, problem_nf, prefix, method, reset, args.flat):
+    if nondet2conf(domain_nf, problem_nf, prefix, method, reset, args.all_reset, args.flat):
         print('Problem is non-deterministic')
     else:
         print('Problem is NOT non-deterministic')
