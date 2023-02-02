@@ -182,7 +182,7 @@ or simplifying CNF theories.
 Rights are registered by their respective owners.
 
 Contact Hector Palacios for further information,
-or visit http://www.ldc.usb.ve/~hlp
+or visit https://hectorpalacios.net
 """ % (sys.argv[0], verbosity, sstrategy, init_horiz, end_horiz, Loc_v)
     sys.exit(1)
 
