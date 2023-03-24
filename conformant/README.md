@@ -7,7 +7,11 @@
 - `docs`: relevant papers
 - `translator`: the planner
 
-## Usage - change in progress
+## Usage via Docker
+
+see [../README.md](README.md)
+
+## Usage
 
 Set var `TRANSLATOR_HOME` to the `translator` directory:
 
