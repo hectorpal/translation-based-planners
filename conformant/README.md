@@ -7,7 +7,7 @@
 - `docs`: relevant papers
 - `translator`: the planner
 
-## Usage
+## Usage - change in progress
 
 Set var `TRANSLATOR_HOME` to the `translator` directory:
 
