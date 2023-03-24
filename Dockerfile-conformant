@@ -42,7 +42,7 @@ RUN apt-get update \
 # g*-multilib is an overkill but will be useful for compiling
 
 WORKDIR /workspace/t0
-COPY . /workspace/t0
+COPY conformant /workspace/t0
 
 ENV TRANSLATOR_HOME /workspace/t0/translator
 
