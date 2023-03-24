@@ -1,4 +1,18 @@
-# Translation-based planners
+
+# T0 - Translation-based planner via Docker
+
+Pull the image from Docker Hub:
+
+```
+docker pull hectorpal/t0-translation-based-planners:latest
+```
+
+Test it with conformant domains. For example, in the `conformant/test` directory:
+```
+docker run -v $PWD/conformant/test:/mnt/test2 hectorpal/t0-translation-based-planners:latest -s t0 /mnt/test2/d.pddl /mnt/test2/p.pddl
+```
+
+# Translation-based planners (all)
 
 A Docker image for running these planners under incomplete information.
 
