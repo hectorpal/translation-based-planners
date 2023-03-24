@@ -15,6 +15,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag translation-based-planners/t0:latest
+      run: docker build . --file Dockerfile --tag hectorpal/t0-translation-based-planners:latest
     - name: Docker Push
-      run: docker push translation-based-planners/t0:latest
+      run: docker push hectorpal/t0-translation-based-planners:latest
