@@ -13,8 +13,8 @@ KBS_STACK=1000  # Keep it high enough to avoid stack overflow (OCaml code)
 MEGAS_MEM=2100  # Mostly affects the planner
 LOG=
 SERIAL=False
-NO_SOLVER=none
-SOLVER=$NO_SOLVER
+NO_PLANNER=none
+PLANNER=$NO_PLANNER
 
 # LIST of translator configurations
 # call for t0: $TRANSLATOR_HOME/translator.py -l result_translator-t0 -s 't0:inf' $*
@@ -41,7 +41,7 @@ usage(){
 Usage: $0 [options] <extra parameters for translator.py>
 -h|--help: this help
 -fh|--full-help: full translator help
--s|--solver: solver to be used [t0|fs0|mc|sat|satplan] (default: call directly translator.py)
+-pl|--planner: planner to be used [t0|fs0|mc|sat|satplan] (default: call directly translator.py)
 -z|--serial: use serial version of the solver (only for sat and satplan)
 -k|--stack: stack size in KB (default: $KBS_STACK)
 -m|--memory: memory limit in MB (default: $MEGAS_MEM)
@@ -51,7 +51,7 @@ Notes:
 - If using translator.py, remember to set the log file with -l option.
 - Remove logs to run again the same experiment. Otherwise, use -f option.
 
-List of translator configurations:
+List of planners:
 - t0: as in JAIR
 - fs0: full Ks0
 - mc: dNNF + model-counting (ICAPS)
@@ -77,9 +77,9 @@ while [ $# -gt 0 ]; do
             $TRANSLATOR_HOME/translator.py
             exit 0
             ;;
-        -s|--solver)
+        -pl|--planner)
             shift
-            SOLVER=$1
+            PLANNER=$1
             ;;
         -k|--stack)
             shift
@@ -105,8 +105,8 @@ done
 
 if [ "a" == "a$LOG" ]; then
     # if solver is set
-    if [ "$NO_SOLVER" != "$SOLVER" ]; then
-        LOG=result_translator-$SOLVER
+    if [ "$NO_PLANNER" != "$PLANNER" ]; then
+        LOG=result_translator-$PLANNER
         # if serial is True, then use the serial version of the solver
         if [ "$SERIAL" == "True" ]; then
             LOG=$LOG-serial
@@ -130,7 +130,7 @@ fi
 ulimit -S -s $((1024*$KBS_STACK))
 ulimit -S -v $((1024*$MEGAS_MEM))
 
-case "$SOLVER" in
+case "$PLANNER" in
     t0)
         $TRANSLATOR_HOME/translator.py -l $LOG -s 't0:inf' $*
         ;;
@@ -157,7 +157,7 @@ case "$SOLVER" in
         fi
         $TRANSLATOR_HOME/translator.py -l $LOG -s 'satplan:inf' $*
         ;;
-    $NO_SOLVER)
+    $NO_PLANNER)
         # if no solver is given, then call directly translator.py
         $TRANSLATOR_HOME/translator.py $*
         ;;
