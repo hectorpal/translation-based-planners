@@ -12,6 +12,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Docker login
+      env:
+        DOCKER_USER: ${{secrets.DOCKER_USER}}
+        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
     - name: Build the Docker image
       run: docker build . --file Dockerfile-conformant --tag hectorpal/t0-translation-based-planners:latest
     - name: Docker Push
