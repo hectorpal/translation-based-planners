@@ -1,34 +1,170 @@
 #!/bin/bash
 
-
-KBS_STACK=1000
-MEGAS_MEM=2100
-#MEGAS_MEM=800
-
-########################
-# End of modifiable vars
-########################
-
-ulimit -S -s $((1024*$KBS_STACK))
-ulimit -S -v $((1024*$MEGAS_MEM))
-
-
-if [[ "a" == "a$TRANSLATOR_HOME" ]]; then
-    a="."
-else
-    a=$TRANSLATOR_HOME
-fi
-
-export TRANSLATOR_HOME=$a
-
-$TRANSLATOR_HOME/translator.py $*
-
-exit 0
-
 if [[ "a" == "a$TRANSLATOR_HOME" ||
     !  -f $TRANSLATOR_HOME/translator.py  ]]; then
     echo TRANSLATOR_HOME enviroment var should be set
     echo to the location of translator.py and the other tools
     exit 1
 fi
+
+# Default values for the options below
+
+KBS_STACK=1000  # Keep it high enough to avoid stack overflow (OCaml code)
+MEGAS_MEM=2100  # Mostly affects the planner
+LOG=
+SERIAL=False
+NO_SOLVER=none
+SOLVER=$NO_SOLVER
+
+# LIST of translator configurations
+# call for t0: $TRANSLATOR_HOME/translator.py -l result_translator-t0 -s 't0:inf' $*
+# call for fs0: $TRANSLATOR_HOME/translator.py -l result_translator-fs0 -s 'fs0:inf' $*
+# call for mc: $TRANSLATOR_HOME/translator.py -l result_translator-mc -s 'mc:inf' $*
+# call for sat: $TRANSLATOR_HOME/translator.py -l result_translator-sat -s 'sat:inf' $*
+# call for sat-serial: $TRANSLATOR_HOME/translator.py -z -l result_translator-sat-serial -s 'sat:inf' $*
+# call for satplan: $TRANSLATOR_HOME/translator.py -l result_translator-satplan -s 'satplan:inf' $*
+# call for satplan-serial: $TRANSLATOR_HOME/translator.py -z -l result_translator-satplan-serial -s 'satplan:inf' $*
+# END of list
+
+# These are the options:
+# - help
+# - solver: [t0|fs0|mc|sat|satplan]
+# - serial (default: parallel). Only for sat and satplan
+# - stack size
+# - memory limit
+# - log file (default: result_translator-<solver>)
+
+# function for usage listing each solver using `cat <<` instead of single line echo, 
+
+usage(){
+    cat <<EOF
+Usage: $0 [options] <extra parameters for translator.py>
+-h|--help: this help
+-fh|--full-help: full translator help
+-s|--solver: solver to be used [t0|fs0|mc|sat|satplan] (default: call directly translator.py)
+-z|--serial: use serial version of the solver (only for sat and satplan)
+-k|--stack: stack size in KB (default: $KBS_STACK)
+-m|--memory: memory limit in MB (default: $MEGAS_MEM)
+-l|--log: log file (default: result_translator-<solver>)
+
+Notes:
+- If using translator.py, remember to set the log file with -l option.
+- Remove logs to run again the same experiment. Otherwise, use -f option.
+
+List of translator configurations:
+- t0: as in JAIR
+- fs0: full Ks0
+- mc: dNNF + model-counting (ICAPS)
+- sat: dNNF + SAT (CAEPIA/LNCS)
+- satplan: SATPLAN-like for classical problems
+EOF
+}
+
+# if no arguments, print usage
+if [ $# -eq 0 ]; then
+    usage
+    exit 0
+fi
+
+# function for parameter parsing, keeping the rest of the parameters
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -fh|--full-help)
+            $TRANSLATOR_HOME/translator.py
+            exit 0
+            ;;
+        -s|--solver)
+            shift
+            SOLVER=$1
+            ;;
+        -k|--stack)
+            shift
+            KBS_STACK=$1
+            ;;
+        -m|--memory)
+            shift
+            MEGAS_MEM=$1
+            ;;
+        -l|--log)
+            shift
+            LOG=$1
+            ;;
+        -z|--serial)
+            SERIAL=True
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
+
+if [ "a" == "a$LOG" ]; then
+    # if solver is set
+    if [ "$NO_SOLVER" != "$SOLVER" ]; then
+        LOG=result_translator-$SOLVER
+        # if serial is True, then use the serial version of the solver
+        if [ "$SERIAL" == "True" ]; then
+            LOG=$LOG-serial
+        fi
+    fi
+fi
+
+# check that KBS_STACK and MEGAS_MEM are numbers
+if ! [[ "$KBS_STACK" =~ ^[0-9]+$ ]]; then
+    echo "Stack size should be a number"
+    usage
+    exit 1
+fi
+if ! [[ "$MEGAS_MEM" =~ ^[0-9]+$ ]]; then
+    echo "Memory limit should be a number"
+    usage
+    exit 1
+fi
+
+# using ulimit to set the stack size and the memory limit
+ulimit -S -s $((1024*$KBS_STACK))
+ulimit -S -v $((1024*$MEGAS_MEM))
+
+case "$SOLVER" in
+    t0)
+        $TRANSLATOR_HOME/translator.py -l $LOG -s 't0:inf' $*
+        ;;
+    fs0)
+        $TRANSLATOR_HOME/translator.py -l $LOG -s 'fs0:inf' $*
+        ;;
+    mc)
+        $TRANSLATOR_HOME/translator.py -l $LOG -s 'mc:inf' $*
+        ;;
+    sat)
+        # if serial is True, then use the serial version of the solver
+        if [ "$SERIAL" == "True" ]; then
+            $TRANSLATOR_HOME/translator.py -z -l $LOG -s 'sat:inf' $*
+        else
+            $TRANSLATOR_HOME/translator.py -l $LOG -s 'sat:inf' $*
+        fi
+        ;;
+    satplan)
+        # if serial is True, then use the serial version of the solver
+        if [ "$SERIAL" == "True" ]; then
+            $TRANSLATOR_HOME/translator.py -z -l $LOG -s 'satplan:inf' $*
+        else
+            $TRANSLATOR_HOME/translator.py -l $LOG -s 'satplan:inf' $*
+        fi
+        $TRANSLATOR_HOME/translator.py -l $LOG -s 'satplan:inf' $*
+        ;;
+    $NO_SOLVER)
+        # if no solver is given, then call directly translator.py
+        $TRANSLATOR_HOME/translator.py $*
+        ;;
+    *)
+        # if solver is not recognized, then print usage
+        usage
+        exit 1
+        ;;
+esac
 
